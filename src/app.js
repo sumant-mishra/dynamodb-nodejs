@@ -1,9 +1,14 @@
+
 const express = require('express')
-const app = express()
-const api = require('./api')
-//const morgan = require('morgan') // logger
+const app = express();
+import {router} from './routes/router';
+//const api = require('../api')
+
 const bodyParser = require('body-parser')
-const cors = require('cors')
+const cors = require('cors');
+const userData = require("./users");
+//const cookieParser = require('cookie-parser'); 
+//app.use(cookieParser());   
 
 app.set('port', (process.env.PORT || 8085))
 
@@ -12,7 +17,7 @@ app.use(bodyParser.urlencoded({ extended: false }))
 
 app.use(cors())
 
-app.use('/api', api)
+app.use('/api', router)
 app.use(express.static('static'))
 
 //app.use(morgan('dev'))
@@ -22,6 +27,14 @@ app.use(function (req, res) {
 	err.status = 404
 	res.json(err)
 })
+
+/* app.use(function(req, res, next){
+	//console.log(userData);
+	//console.log(res.cookie())
+	res.cookie('user', "calling");
+	//res.locals.user = userData
+	next();
+}) */
 
 //  MongoDB connection 
 const mongoose = require('mongoose')

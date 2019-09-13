@@ -4,19 +4,38 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "start": "nodemon app.js"
+    "build": "babel src --out-dir dist",
+    "serve": "node dist/app.js",
+    "start": "babel src --out-dir dist && nodemon ./dist/app.js",
+    "watch": "nodemon --exec babel-node src/app.js"
   },
-  "author": "Mark Scott",
-  "license": "MIT",
+  "author": "",
+  "license": "ISC",
   "dependencies": {
-    "body-parser": "1.18.3",
-    "cors": "2.8.4",
-    "download-csv": "^1.1.1",
-    "eslint": "5.7.0",
-    "express": "4.16.4",
-    "fs": "0.0.1-security",
-    "json2csv": "^4.5.2",
-    "mongoose": "5.3.4",
-    "nodemon": "1.18.4"
+    "body-parser": "^1.19.0",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "file-type": "^12.0.1",
+    "jsonwebtoken": "^8.5.1",
+    "mongoose": "^5.6.0",
+    "morgan": "^1.9.1",
+    "multiparty": "^4.2.1",
+    "nodemailer": "^6.2.1",
+    "nodemon": "^1.19.1",
+    "rotating-file-stream": "^1.4.2"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.0.0",
+    "@babel/core": "^7.0.0",
+    "@babel/node": "^7.4.5",
+    "@babel/plugin-proposal-class-properties": "^7.0.0",
+    "@babel/plugin-proposal-object-rest-spread": "^7.0.0",
+    "@babel/preset-env": "^7.0.0",
+    "apidoc": "^0.17.7",
+    "babel-core": "7.0.0-bridge.0",
+    "babel-eslint": "^8.2.1",
+    "babel-jest": "^23.4.2",
+    "jsdoc": "^3.6.2",
+    "prettier": "^1.18.2"
   }
 }

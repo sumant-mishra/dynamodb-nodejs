@@ -1,9 +1,9 @@
 // Proposal
-
+var ObjectId = require('mongoose').Types.ObjectId; 
 const mongoose = require('mongoose')
 
 
-const proposalSchema = new mongoose.Schema({
+const internshipProposalSchema = new mongoose.Schema({
 	companyId: {type: mongoose.Schema.Types.ObjectId},
     profile: { type: String },
     docsRequired: { type: String },
@@ -24,8 +24,8 @@ const proposalSchema = new mongoose.Schema({
     minDegreeCGPA: { type: Number },
     minBacklogs: { type: Number },
     minBreaks: { type: Number },
-    
+    guideId: { type: mongoose.Schema.Types.ObjectId }  
 })
 
 
-module.exports = mongoose.model( 'Proposal', proposalSchema )
+module.exports = mongoose.model( 'InternshipProposal', internshipProposalSchema )
