@@ -33,7 +33,7 @@ const getProposalsListForUniversity = function (req, res) {
           
           $lookup:
           {
-              from: 'studentinternships',
+              from: 'internshipapplications',
               localField: '_id',
               foreignField: 'proposalId',
               as: 'internship'
@@ -240,7 +240,7 @@ const getProposalApprovalsData = function (req, res) {
     }, {
         $lookup:
         {
-            from: 'proposals',
+            from: 'internshipproposals',
             localField: 'proposalId',
             foreignField: '_id',
             as: 'proposal'
@@ -303,6 +303,86 @@ const updateApprovalStatus = function (req, res) {
     
 }
 
+const getUniversityStudents = function (req, res) {
+    Student.aggregate([
+        {
+            $lookup:
+            {
+
+                from: 'internshipapplications',
+                localField: '_id',
+                foreignField: 'studentId',
+                as: 'internship'
+
+            }
+        },
+        { $unwind: '$internship' }, {
+            $project:
+            {
+                _id: 1,
+                name: 1,
+                status: "$internship.status",
+                hasAccepted: "$internship.hasAccepted",
+                appliedOn: "$internship.appliedOn",
+                resumeSubmitted: "$internship.resumeSubmitted",
+                remark: "$internship.remark",
+                gradeOrMarks: "$internship.gradeOrMarks",
+                proposalId: "$internship.proposalId"
+            }
+        }, {
+            $lookup:
+            {
+                from: 'internshipproposals',
+                localField: 'proposalId',
+                foreignField: '_id',
+                as: 'proposal'
+            }
+        },
+        { $unwind: '$proposal' }, {
+            $project:
+            {
+                _id: 1,
+                name: 1,
+                status: 1,
+                hasAccepted: 1,
+                appliedOn: 1,
+                resumeSubmitted: 1,
+                remark: 1,
+                gradeOrMarks: 1,
+                proposalId: 1,
+                profile: "$proposal.profile",
+                stipend: "$proposal.stipend",
+                location: "$proposal.location",
+                copanyId: "$proposal.companyId"
+            }
+        }, {
+            $lookup:
+            {
+                from: 'companies',
+                localField: 'copanyId',
+                foreignField: '_id',
+                as: 'company'
+            }
+        },
+        { $unwind: '$company' }, {
+            $group:
+            {
+                _id: "$_id",
+                name: { $first: "$name" },
+                proposals: { $push: { profile: "$profile", company: "$company", status: "$status", stipend: "$stipend", location: "$location" } }
+            }
+        }
+    ])
+        .exec()
+        .then(docs => res.status(200)
+            .json(docs))
+        .catch(err => res.status(500)
+            .json({
+                message: 'Error finding proposals',
+                error: err
+            }))
+}
+
 
 module.exports = {
     getProposalsListForUniversity,
@@ -311,5 +391,6 @@ module.exports = {
     getStudentDetails,
     getGuides,
     getProposalApprovalsData,
-    updateApprovalStatus
+    updateApprovalStatus,
+    getUniversityStudents
 }

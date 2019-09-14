@@ -10,6 +10,8 @@ internshipRouter.route('/studentdetails/:id').get(internshipController.getStuden
 internshipRouter.route('/guides').get(internshipController.getGuides);
 internshipRouter.route('/approvals').get(internshipController.getProposalApprovalsData);
 internshipRouter.route('/approvals').post(internshipController.updateApprovalStatus);
+internshipRouter.route('/students').get(internshipController.getUniversityStudents);
+
 
 
 /* const universityController = require('./university.controller');

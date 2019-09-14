@@ -1,6 +1,7 @@
 var ObjectId = require('mongoose').Types.ObjectId;
 const InternshipProposal = require('../../../models/internshipproposal');
 const InternshipApplication = require('../../../models/internshipapplication');
+const Company = require('./../../../models/company')
 
 const userData = require("./../../../users");
 
@@ -50,7 +51,7 @@ const saveNewInternshipProposal = function(req, res){
 }
 const updateInternshipProposal = function (req, res) {
 		
-    InternshipProposal.updateOne({_id:req.body._id}, req.body, function (err, project) {
+    InternshipProposal.updateOne({_id:req.params.id}, req.body, function (err, project) {
         if (err) {				
             return res.status(400).json(err)
         }
@@ -59,8 +60,8 @@ const updateInternshipProposal = function (req, res) {
     
 }
 const deleteInternshipProposals = function (req, res) {
-    let ids = JSON.parse(req.params.ids);
-
+    let ids = JSON.parse(decodeURI(req.params.ids));
+    console.log('ids: ', ids);
     InternshipProposal.deleteMany({_id:{$in: ids}}, function (err, project) {
         if (err) {
             return res.status(400).json(err)
@@ -91,7 +92,17 @@ const getInternshipStatusData = function (req, res) {
     if(req.query.minpercentile){
         //objFilters.minDegreeCGPA = { $and: [ { $gte: [ "$minDegreeCGPA", req.query.mincgpa ] }, { $lte: [ "$minDegreeCGPA", req.query.maxcgpa ] } ] 
     }
-    
+    let selectedYear = new Date().getFullYear();
+    if(req.query.year){
+        selectedYear = req.query.year;
+    }
+
+    objFilters.yearFrom = { $gte: Number(selectedYear) }
+    objFilters.yearTo = { $lte: Number(selectedYear) }
+
+    let objYearFilter =  {};//{$or: [{ $eq: [{ "$year": "$periodFrom" }, selectedYear]}, { $eq: [{ "$year": "$periodTo" }, selectedYear]}]}
+    objYearFilter.periodFrom =  { $eq: [{ $year: "$periodFrom" }, 2019] }
+    //console.log("caling");
     InternshipProposal.aggregate([
          
         {
@@ -105,7 +116,7 @@ const getInternshipStatusData = function (req, res) {
             }
 
         },
-        { $unwind: {path: '$internship'} },
+        { $unwind: {path: '$internship'} } ,
         {
             
             $lookup:
@@ -128,8 +139,8 @@ const getInternshipStatusData = function (req, res) {
                 //description: 1,
                 //location: 1,
                 //stipend: 1,
-                //periodFrom: 1,
-                //periodTo: 1,
+                yearFrom: {$year: "$periodFrom"},
+                yearTo: {$year: "$periodTo"},
                 minTenth: 1,
                 minTwelfth: 1,
                 minDiploma: 1,
@@ -155,7 +166,7 @@ const getInternshipStatusData = function (req, res) {
                   objFilters
               ]
           }  
-        }])
+        } ])
         .exec()
         .then(docs => res.status(200)
             .json(docs))
@@ -192,7 +203,7 @@ const updateInternshipStatuses = function (req, res) {
 const updateInternshipRemark = function (req, res) {
     //console.log('calling remark: ', req.body);
     let internshipAssessmentItem = req.body;
-    InternshipApplication.updateOne({_id:internshipAssessmentItem._id}, { $set: internshipAssessmentItem}, 
+    InternshipApplication.updateOne({_id:req.params.id}, { $set: internshipAssessmentItem}, 
         function (err, project) {
             if (err) {				
                 //return res.status(400).json(err)
@@ -204,6 +215,16 @@ const updateInternshipRemark = function (req, res) {
 }
 
 const getInternshipAssessmentData = function (req, res) { 
+
+    let objFilters = {}
+    //objFilters.companyId = userData.user._id;
+    console.log(req.query);
+    if(req.query.profile){
+        objFilters.profile = {$eq: req.query.profile}
+    }
+    if(req.query.college){
+        objFilters.college = {$eq: req.query.college}
+    }
     InternshipProposal.aggregate([
         {
             
@@ -262,6 +283,12 @@ const getInternshipAssessmentData = function (req, res) {
                 studentName: "$student.name"
             }
 
+        },{
+            $match:{
+                $and: [
+                    objFilters
+                ]
+            }
         }])
         .exec()
         .then(docs => res.status(200)
@@ -275,7 +302,7 @@ const getInternshipAssessmentData = function (req, res) {
 
 const updateGradeOrMark = function (req, res) {
     let internshipAssessmentItem = req.body;
-    InternshipApplication.updateOne({_id:internshipAssessmentItem._id}, { $set: internshipAssessmentItem}, 
+    InternshipApplication.updateOne({_id:req.params.id}, { $set: internshipAssessmentItem}, 
         function (err, project) {
             if (err) {				
                 //return res.status(400).json(err)
@@ -300,6 +327,200 @@ const deleteInternshipApplications = function (req, res) {
 }
 
 
+const getCompanyFiltersData = function(req, res){
+    let dt = new Date();
+
+    let objFilters = {}
+    objFilters.companyId = userData.user._id;
+    
+    let filtersData = {};
+    let filterOptions = [];
+    let responseCounter = 0;
+    if(req.query.filtertypes){
+        filterOptions = JSON.parse(decodeURI(req.query.filtertypes));
+        for(var i = 0; i < filterOptions.length; i++){
+            switch(filterOptions[i]){
+                case "profile":
+                        InternshipProposal.aggregate([
+                            {
+                                $match: {
+                                    companyId: {
+                                        $eq: ObjectId(userData.user._id)
+                                    }
+                                }
+                            },
+                            {
+                                $group: {
+                                    _id: "$_id",
+                                    profile: { $first: "$profile" }
+                                }
+                            }
+                        ]).exec((err, result) => {
+                            if(err){
+                                console.log(err);
+                            }
+                            filtersData.profiles = result;
+                            responseCounter++;
+                            //console.log(filtersData);
+                            if(responseCounter == filterOptions.length){
+                                res.json(filtersData);
+                            }
+                        })
+                    break;
+
+                case "location":
+                    InternshipProposal.aggregate([
+                        {
+                            $match: {
+                                companyId: {
+                                    $eq: ObjectId(userData.user._id)
+                                }
+                            }
+                        },
+                        {
+                            $group: {
+                                _id: null,
+                                location: { $first: "$location" }
+                            }
+                        }
+                    ]).exec((err, result) => {
+                        if(err){
+                            console.log(err);
+                        }
+                        filtersData.locations = result;
+                        responseCounter++;
+                        //console.log(filtersData);
+                        if(responseCounter == filterOptions.length){
+                            res.json(filtersData);
+                        }
+                    })
+                break;
+
+            case "program":
+                InternshipProposal.aggregate([
+                    {
+                        $match: {
+                            companyId: {
+                                $eq: ObjectId(userData.user._id)
+                            }
+                        }
+                    },
+                    {
+                        $group: {
+                            _id: null,
+                            program: { $first: "$program" }
+                        }
+                    }
+                ]).exec((err, result) => {
+                    if(err){
+                        console.log(err);
+                    }
+                    filtersData.programs = result;
+                    responseCounter++;
+                    //console.log(filtersData);
+                    if(responseCounter == filterOptions.length){
+                        res.json(filtersData);
+                    }
+                })
+            break;
+
+            case "sector":
+                InternshipProposal.aggregate([
+                    {
+                        $match: {
+                            companyId: {
+                                $eq: ObjectId(userData.user._id)
+                            }
+                        }
+                    },
+                    {
+                        $group: {
+                            _id: null,
+                            sector: { $first: "$sector" }
+                        }
+                    }
+                ]).exec((err, result) => {
+                    if(err){
+                        console.log(err);
+                    }
+                    filtersData.sectors = result;
+                    responseCounter++;
+                    //console.log(filtersData);
+                    if(responseCounter == filterOptions.length){
+                        res.json(filtersData);
+                    }
+                })
+            break;
+
+            case "college":
+                InternshipProposal.aggregate([
+                    {
+                        $match: {
+                            companyId: {
+                                $eq: ObjectId(userData.user._id)
+                            }
+                        }
+                    },
+                    {
+                        $group: {
+                            _id: null,
+                            college: { $first: "$college" }
+                        }
+                    }
+                ]).exec((err, result) => {
+                    if(err){
+                        console.log(err);
+                    }
+                    filtersData.colleges = result;
+                    responseCounter++;
+                    //console.log(filtersData);
+                    if(responseCounter == filterOptions.length){
+                        res.json(filtersData);
+                    }
+                })
+            break;
+
+            case "company":
+                Company.aggregate([
+                    {
+                        $group: {
+                            _id: "$_id",
+                            company: { $first: "$name" }
+                        }
+                    }
+                ]).exec((err, result) => {
+                    if(err){
+                        console.log(err);
+                    }
+                    filtersData.companies = result;
+                    responseCounter++;
+                    //console.log(filtersData);
+                    if(responseCounter == filterOptions.length){
+                        res.json(filtersData);
+                    }
+                })
+            break;
+            }
+        }
+    }
+    /* InternshipProposal.find(objFilters).distinct("_id", function (err, docs) {
+        //console.log(docs);
+    }); */
+
+    
+
+
+    /* InternshipProposal.find(objFilters)
+        .exec()
+        .then(docs => res.status(200)
+            .json(docs))
+        .catch(err => res.status(500)
+            .json({
+                message: 'Error finding proposals',
+                error: err
+            })) */
+}
+
 
 
 module.exports = {
@@ -312,5 +533,6 @@ module.exports = {
     updateInternshipRemark,
     getInternshipAssessmentData,
     updateGradeOrMark,
-    deleteInternshipApplications
+    deleteInternshipApplications,
+    getCompanyFiltersData
 }

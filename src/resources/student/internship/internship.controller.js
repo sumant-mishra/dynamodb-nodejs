@@ -80,7 +80,7 @@ const getProposalsListForStudent = function (req, res) {
 }
 
 const applyForInternship = function (req, res) {
-        
+        console.log('calling appyForInternship');
     let data = {...req.body};
     data.studentId = ObjectId(userData.user._id);
     let internshipApplication = new InternshipApplication(data)
@@ -104,9 +104,10 @@ const applyForInternship = function (req, res) {
 const acceptOffer = function (req, res) {
         
     //let internshipStatusItems = req.body;
+    let data = {_id: req.params.id, status: "ACCEPTED"}
+    console.log(" accept offer: ", data);
     
-    let results = [];
-    InternshipApplication.updateOne({_id:internshipStatusItem._id}, { $set: req.body}, 
+    InternshipApplication.updateOne({_id:req.params.id}, { $set: data}, 
         function (err, project) {
             
             if (err) {				
@@ -115,7 +116,7 @@ const acceptOffer = function (req, res) {
             //results.push(internshipStatusItem);
             //res.status(200).json(results)
             //if(results.length == internshipStatusItems.length){
-                res.status(200).json(req.body);
+                res.status(200).json(data);
             //}
         })
     

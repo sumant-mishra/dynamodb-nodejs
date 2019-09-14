@@ -6,8 +6,8 @@ export const internshipRouter = Router();
 
 internshipRouter.route('/proposals').get(internshipController.getInternshipProposals);
 internshipRouter.route('/proposals').post(internshipController.saveNewInternshipProposal);
-internshipRouter.route('/proposals').put(internshipController.updateInternshipProposal);
-internshipRouter.route('/proposals').delete(internshipController.deleteInternshipProposals);
+internshipRouter.route('/proposals/:id').put(internshipController.updateInternshipProposal);
+internshipRouter.route('/proposals/:ids').delete(internshipController.deleteInternshipProposals);
 
 
 
@@ -16,8 +16,13 @@ internshipRouter.route('/application/status').post(internshipController.updateIn
 internshipRouter.route('/applications/:ids').delete(internshipController.deleteInternshipApplications);
 
 internshipRouter.route('/assessment/proposals').get(internshipController.getInternshipAssessmentData);
-internshipRouter.route('/assessment/remark').post(internshipController.updateInternshipRemark);
-internshipRouter.route('/assessment/gradeormarks').post(internshipController.updateGradeOrMark);
+internshipRouter.route('/assessment/remark/:id').put(internshipController.updateInternshipRemark);
+internshipRouter.route('/assessment/gradeormarks/:id').put(internshipController.updateGradeOrMark);
+
+
+internshipRouter.route('/filtersdata').get(internshipController.getCompanyFiltersData);
+
+
 
 
 /* module.exports = function (router) {

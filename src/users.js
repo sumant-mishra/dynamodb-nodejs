@@ -55,7 +55,7 @@ const companies = [
     }
 ]
 
-const Student = students[1]
+const Student = students[0]
 
 const Company = companies[0]
 

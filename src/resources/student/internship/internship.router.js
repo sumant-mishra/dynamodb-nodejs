@@ -5,7 +5,7 @@ export const internshipRouter = Router();
 
 internshipRouter.route('/applications').get(internshipController.getProposalsListForStudent);
 internshipRouter.route('/apply').post(internshipController.applyForInternship);
-internshipRouter.route('/application/acceptoffer').put(internshipController.applyForInternship);
+internshipRouter.route('/application/acceptoffer/:id').put(internshipController.acceptOffer);
 
 /* module.exports = function (router) {
     
