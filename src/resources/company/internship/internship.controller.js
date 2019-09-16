@@ -1,9 +1,25 @@
 var ObjectId = require('mongoose').Types.ObjectId;
 const InternshipProposal = require('../../../models/internshipproposal');
 const InternshipApplication = require('../../../models/internshipapplication');
-const Company = require('./../../../models/company')
+const Company = require('./../../../models/company');
+const json2csv = require('json2csv').parse;
 
 const userData = require("./../../../users");
+
+
+const downloadCSVFromJSON = (res, docs, name) => {
+    let fields = [];
+    if(docs.length > 0){
+        fields = Object.keys(docs[0]);
+    }
+    
+    const csv = json2csv(docs, {fields});
+    
+    res.setHeader('Content-disposition', 'attachment; filename=' + name);
+    res.set('Content-Type', 'text/csv');
+    
+    res.status(200).send(csv);
+}
 
 const getInternshipProposals = function (req, res) { 
     let dt = new Date();
@@ -71,105 +87,130 @@ const deleteInternshipProposals = function (req, res) {
     
 }
 
+const processInternshipStatusReq = function(req, res){
+    return new Promise((resolve, reject) => {
+
+        let objFilters = {};
+        
+        if (req.query.profile) {
+            let profiles = JSON.parse(req.query.profile).map(item => {
+                return ObjectId(item);
+            })
+            objFilters._id = { $in: profiles }
+        }
+
+        if (req.query.college) {
+            objFilters.college = { $in: JSON.parse(req.query.college) }
+        }
+
+        if (req.query.program) {
+            objFilters.program = { $in: JSON.parse(req.query.program) }
+        }
+        if (req.query.sector) {
+            objFilters.sector = { $in: JSON.parse(req.query.sector) }
+        }
+
+        if (req.query.mincgpa) {
+            objFilters.stipend = { $gte: Number(req.query.mincgpa), $lte: Number(req.query.maxcgpa) }
+        }
+
+        if (req.query.year) {
+            objFilters.yearFrom = { $gte: Number(req.query.year) };
+            objFilters.yearTo = { $lte: Number(req.query.year) };
+        }
+
+        InternshipProposal.aggregate([
+         
+            {
+                
+                $lookup:
+                {
+                    from: 'internshipapplications',
+                    localField: '_id',
+                    foreignField: 'proposalId',
+                    as: 'internship'
+                }
+    
+            },
+            { $unwind: {path: '$internship'} } ,
+            {
+                
+                $lookup:
+                {
+                    from: 'students',
+                    localField: 'internship.studentId',
+                    foreignField: '_id',
+                    as: 'student'
+                }
+    
+            },
+            { $unwind: {path: '$student'} } ,
+            {
+                $project:
+                {
+                    _id: 1,
+                    profile: 1,
+                    sector: 1,
+                    program: 1,
+                    //description: 1,
+                    //location: 1,
+                    //stipend: 1,
+                    yearFrom: {$year: "$periodFrom"},
+                    yearTo: {$year: "$periodTo"},
+                    minTenth: 1,
+                    minTwelfth: 1,
+                    minDiploma: 1,
+                    minDegreeCGPA: 1,
+                    //deadlineDate: 1,
+                    //companyId: 1,
+                    college: 1,
+                    sector: 1,
+                    //companyName: "$company.name",
+                    //companyLogo: "$company.logo",
+                    internshipId: "$internship._id",
+                    //studentId: "$internship.studentId",
+                    status: "$internship.status",
+                    hasAccepted: "$internship.hasAccepted",
+                    //appliedOn: "$internship.appliedOn",
+                    //resumeSubmitted: "$internship.resumeSubmitted",
+                    studentName: "$student.name"
+                }
+    
+            },{
+              $match: {
+                  $and: [
+                      objFilters
+                  ]
+              }  
+            } ])
+            .exec()
+            .then(docs => {
+                resolve(docs);
+            })
+            .catch(err => {
+                reject(err);
+            })
+    })
+}
+
 const getInternshipStatusData = function (req, res) { 
 
-    let objFilters = {}
-    if(req.query.profile){
-        objFilters.profile = {$eq: req.query.profile}
-    }
-    if(req.query.college){
-        objFilters.college = {$in: JSON.parse(req.query.college)}
-    }
-    if(req.query.program){
-        objFilters.program = {$eq: req.query.program}
-    }
-    if(req.query.department){
-        objFilters.sector = {$eq: req.query.sector}
-    }
-    if(req.query.mincgpa){
-        objFilters.minDegreeCGPA =  { $gte: Number(req.query.mincgpa)  , $lte: Number(req.query.maxcgpa) }
-    }
-    if(req.query.minpercentile){
-        //objFilters.minDegreeCGPA = { $and: [ { $gte: [ "$minDegreeCGPA", req.query.mincgpa ] }, { $lte: [ "$minDegreeCGPA", req.query.maxcgpa ] } ] 
-    }
-    let selectedYear = new Date().getFullYear();
-    if(req.query.year){
-        selectedYear = req.query.year;
-    }
-
-    objFilters.yearFrom = { $gte: Number(selectedYear) }
-    objFilters.yearTo = { $lte: Number(selectedYear) }
-
-    let objYearFilter =  {};//{$or: [{ $eq: [{ "$year": "$periodFrom" }, selectedYear]}, { $eq: [{ "$year": "$periodTo" }, selectedYear]}]}
-    objYearFilter.periodFrom =  { $eq: [{ $year: "$periodFrom" }, 2019] }
-    //console.log("caling");
-    InternshipProposal.aggregate([
-         
-        {
-            
-            $lookup:
-            {
-                from: 'internshipapplications',
-                localField: '_id',
-                foreignField: 'proposalId',
-                as: 'internship'
-            }
-
-        },
-        { $unwind: {path: '$internship'} } ,
-        {
-            
-            $lookup:
-            {
-                from: 'students',
-                localField: 'internship.studentId',
-                foreignField: '_id',
-                as: 'student'
-            }
-
-        },
-        { $unwind: {path: '$student'} } ,
-        {
-            $project:
-            {
-                _id: 1,
-                profile: 1,
-                sector: 1,
-                program: 1,
-                //description: 1,
-                //location: 1,
-                //stipend: 1,
-                yearFrom: {$year: "$periodFrom"},
-                yearTo: {$year: "$periodTo"},
-                minTenth: 1,
-                minTwelfth: 1,
-                minDiploma: 1,
-                minDegreeCGPA: 1,
-                //deadlineDate: 1,
-                //companyId: 1,
-                college: 1,
-                sector: 1,
-                //companyName: "$company.name",
-                //companyLogo: "$company.logo",
-                internshipId: "$internship._id",
-                //studentId: "$internship.studentId",
-                status: "$internship.status",
-                hasAccepted: "$internship.hasAccepted",
-                //appliedOn: "$internship.appliedOn",
-                //resumeSubmitted: "$internship.resumeSubmitted",
-                studentName: "$student.name"
-            }
-
-        },{
-          $match: {
-              $and: [
-                  objFilters
-              ]
-          }  
-        } ])
-        .exec()
+    processInternshipStatusReq(req, res)
         .then(docs => res.status(200)
             .json(docs))
+        .catch(err => res.status(500)
+            .json({
+                message: 'Error finding proposals',
+                error: err
+    }))
+}
+
+const downloadInternshipStatusData = function (req, res) { 
+
+    processInternshipStatusReq(req, res)
+        .then(docs => {
+            downloadCSVFromJSON(res, docs, "status.csv");
+        })
         .catch(err => res.status(500)
             .json({
                 message: 'Error finding proposals',
@@ -214,13 +255,15 @@ const updateInternshipRemark = function (req, res) {
     
 }
 
-const getInternshipAssessmentData = function (req, res) { 
+const processInternshipAssessmentData = function(req, res){
+    return new Promise((resolve, reject) => {
 
-    let objFilters = {}
+        let objFilters = {}
     //objFilters.companyId = userData.user._id;
+    console.log("req.query: ", req.query);
     console.log(req.query);
     if(req.query.profile){
-        objFilters.profile = {$eq: req.query.profile}
+        objFilters._id = {$eq: ObjectId(req.query.profile)}
     }
     if(req.query.college){
         objFilters.college = {$eq: req.query.college}
@@ -291,8 +334,33 @@ const getInternshipAssessmentData = function (req, res) {
             }
         }])
         .exec()
+        .then(docs => {
+            resolve(docs);
+        })
+        .catch(err => {
+            reject(err);
+        })
+    })
+}
+
+const getInternshipAssessmentData = function (req, res) { 
+
+    processInternshipAssessmentData(req,res)
         .then(docs => res.status(200)
             .json(docs))
+        .catch(err => res.status(500)
+            .json({
+                message: 'Error finding proposals',
+                error: err
+    }))
+}
+
+const downloadInternshipAssessmentData = function (req, res) { 
+
+    processInternshipAssessmentData(req,res)
+        .then(docs => {
+            downloadCSVFromJSON(res, docs, "assessment.csv");
+        })
         .catch(err => res.status(500)
             .json({
                 message: 'Error finding proposals',
@@ -370,16 +438,16 @@ const getCompanyFiltersData = function(req, res){
 
                 case "location":
                     InternshipProposal.aggregate([
-                        {
+                        /* {
                             $match: {
                                 companyId: {
                                     $eq: ObjectId(userData.user._id)
                                 }
                             }
-                        },
+                        }, */
                         {
                             $group: {
-                                _id: null,
+                                _id: "$location",
                                 location: { $first: "$location" }
                             }
                         }
@@ -398,17 +466,10 @@ const getCompanyFiltersData = function(req, res){
 
             case "program":
                 InternshipProposal.aggregate([
-                    {
-                        $match: {
-                            companyId: {
-                                $eq: ObjectId(userData.user._id)
-                            }
-                        }
-                    },
+                    
                     {
                         $group: {
-                            _id: null,
-                            program: { $first: "$program" }
+                            _id: "$program"
                         }
                     }
                 ]).exec((err, result) => {
@@ -427,16 +488,8 @@ const getCompanyFiltersData = function(req, res){
             case "sector":
                 InternshipProposal.aggregate([
                     {
-                        $match: {
-                            companyId: {
-                                $eq: ObjectId(userData.user._id)
-                            }
-                        }
-                    },
-                    {
                         $group: {
-                            _id: null,
-                            sector: { $first: "$sector" }
+                            _id: "$sector" 
                         }
                     }
                 ]).exec((err, result) => {
@@ -455,16 +508,8 @@ const getCompanyFiltersData = function(req, res){
             case "college":
                 InternshipProposal.aggregate([
                     {
-                        $match: {
-                            companyId: {
-                                $eq: ObjectId(userData.user._id)
-                            }
-                        }
-                    },
-                    {
                         $group: {
-                            _id: null,
-                            college: { $first: "$college" }
+                            _id: "$college" 
                         }
                     }
                 ]).exec((err, result) => {
@@ -529,9 +574,11 @@ module.exports = {
     updateInternshipProposal,
     deleteInternshipProposals,
     getInternshipStatusData,
+    downloadInternshipStatusData,
     updateInternshipStatuses,
     updateInternshipRemark,
     getInternshipAssessmentData,
+    downloadInternshipAssessmentData,
     updateGradeOrMark,
     deleteInternshipApplications,
     getCompanyFiltersData

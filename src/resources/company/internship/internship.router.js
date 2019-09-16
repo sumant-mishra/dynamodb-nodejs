@@ -12,10 +12,12 @@ internshipRouter.route('/proposals/:ids').delete(internshipController.deleteInte
 
 
 internshipRouter.route('/status').get(internshipController.getInternshipStatusData);
+internshipRouter.route('/status/download').get(internshipController.downloadInternshipStatusData);
 internshipRouter.route('/application/status').post(internshipController.updateInternshipStatuses);
 internshipRouter.route('/applications/:ids').delete(internshipController.deleteInternshipApplications);
 
 internshipRouter.route('/assessment/proposals').get(internshipController.getInternshipAssessmentData);
+internshipRouter.route('/assessment/proposals/download').get(internshipController.downloadInternshipAssessmentData);
 internshipRouter.route('/assessment/remark/:id').put(internshipController.updateInternshipRemark);
 internshipRouter.route('/assessment/gradeormarks/:id').put(internshipController.updateGradeOrMark);
 

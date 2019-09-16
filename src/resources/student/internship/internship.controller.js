@@ -5,7 +5,34 @@ const InternshipApplication = require('../../../models/internshipapplication');
 const userData = require("./../../../users");
 
 const getProposalsListForStudent = function (req, res) { 
-    //console.log("ObjectId(userData.user._id): ", ObjectId(userData.user._id));
+    
+    let objFilters = {};
+
+    if(req.query.profile){
+        objFilters.profile = {$eq: req.query.profile}
+    }
+
+    if(req.query.location){
+        objFilters.location = {$in: JSON.parse(req.query.location)}
+    }
+
+    if(req.query.company){
+        let companies = JSON.parse(req.query.company).map(item => {
+            return ObjectId(item);
+        })
+        objFilters.companyId = {$in: companies}
+    }
+
+    if(req.query.status){
+        
+        objFilters.status = {$in: JSON.parse(req.query.status)}
+    }
+
+    if(req.query.minstipend){
+        console.log("req.query.status: ", req.query.minstipend, req.query.minstipend);
+        objFilters.stipend =  { $gte: Number(req.query.minstipend)  , $lte: Number(req.query.maxstipend) }
+    }
+
     InternshipProposal.aggregate([
         {
             $lookup:
@@ -68,6 +95,12 @@ const getProposalsListForStudent = function (req, res) {
                 resumeSubmitted: "$internship.resumeSubmitted"
             }
 
+        },{
+            $match: {
+                $and: [
+                    objFilters
+                ]
+            }
         }])
         .exec()
         .then(docs => res.status(200)

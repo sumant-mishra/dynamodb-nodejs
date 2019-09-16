@@ -4,13 +4,17 @@ const internshipController = require('./internship.controller');
 export const internshipRouter = Router();
 
 internshipRouter.route('/proposals').get(internshipController.getProposalsListForUniversity);
+internshipRouter.route('/proposals/download').get(internshipController.downloadProposalsListForUniversity);
 internshipRouter.route('/assignguide').post(internshipController.assignGuide);
 internshipRouter.route('/profilenames').get(internshipController.getProfileNames);
 internshipRouter.route('/studentdetails/:id').get(internshipController.getStudentDetails);
+internshipRouter.route('/studentdetails/download/:id').get(internshipController.downloadStudentDetails);
 internshipRouter.route('/guides').get(internshipController.getGuides);
 internshipRouter.route('/approvals').get(internshipController.getProposalApprovalsData);
+internshipRouter.route('/approvals/download').get(internshipController.downloadProposalApprovalsData);
 internshipRouter.route('/approvals').post(internshipController.updateApprovalStatus);
 internshipRouter.route('/students').get(internshipController.getUniversityStudents);
+internshipRouter.route('/students/download').get(internshipController.downloadUniversityStudents);
 
 
 
