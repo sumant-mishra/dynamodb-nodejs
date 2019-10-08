@@ -15,7 +15,7 @@ const internshipProposalSchema = new mongoose.Schema({
     deadlineDate: { type: Date },
     college: { type: String },
     program: { type: String },
-    percentileOrCGPA: { type: String },
+    noOfSlots: { type: Number },
     periodFrom: { type: Date },
     periodTo: { type: Date },
     minTenth: { type: Number },
