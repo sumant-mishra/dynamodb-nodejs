@@ -7,6 +7,12 @@ var ObjectId = require('mongoose').Types.ObjectId;
 MongoClient.connect(url, function(err, db) {
   if (err) throw err;
   var dbo = db.db("ucsconnect");
+
+  dbo.collection('colleges').find().toArray(function(err, res) {
+    if (err) throw err;
+    console.log(res);
+    db.close();
+  });
   /* dbo.collection('proposals').find({ _id: ObjectId("5d5e39d339991ec372567e44")}).toArray(function(err, res) {
     if (err) throw err;
     console.log(res);

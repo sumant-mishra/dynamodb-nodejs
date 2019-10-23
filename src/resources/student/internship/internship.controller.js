@@ -115,6 +115,7 @@ const getProposalsListForStudent = function (req, res) {
 const applyForInternship = function (req, res) {
         console.log('calling appyForInternship');
     let data = {...req.body};
+    console.log("data: ", data);
     data.studentId = ObjectId(userData.user._id);
     let internshipApplication = new InternshipApplication(data)
     internshipApplication.save(function (err, project) {

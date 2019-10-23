@@ -2,6 +2,11 @@
 var ObjectId = require('mongoose').Types.ObjectId; 
 const mongoose = require('mongoose')
 
+const collegeSchema = new mongoose.Schema({
+    value: { type: String },
+    label: { type: String }
+})
+
 
 const internshipProposalSchema = new mongoose.Schema({
 	companyId: {type: mongoose.Schema.Types.ObjectId},
@@ -13,7 +18,7 @@ const internshipProposalSchema = new mongoose.Schema({
     location: { type: String },
     stipend: { type: Number },
     deadlineDate: { type: Date },
-    college: { type: String },
+    college: [collegeSchema],
     program: { type: String },
     noOfSlots: { type: Number },
     periodFrom: { type: Date },

@@ -1,17 +1,20 @@
 const students = [
     {
-        "_id": "5d722f926610d9411f84765e",
+        "_id": "5dafd1c4fa528a5f7136842e",
         "name": "Sumant Mishra",
+        "college": "AND College",
         "__v": 0
     },
     {
-        "_id": "5d722f996610d9411f84765f",
+        "_id": "5dafd1e1fa528a5f7136842f",
         "name": "Ravi Tomar",
+        "college": "ARSD College",
         "__v": 0
     },
     {
-        "_id": "5d722f9f6610d9411f847660",
+        "_id": "5dafd1f0fa528a5f71368430",
         "name": "Kapil Kumar",
+        "college": "AND College",
         "__v": 0
     }
 ]
@@ -55,7 +58,7 @@ const companies = [
     }
 ]
 
-const Student = students[0]
+const Student = students[1]
 
 const Company = companies[0]
 

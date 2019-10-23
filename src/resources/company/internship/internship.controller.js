@@ -57,6 +57,7 @@ const getInternshipProposals = function (req, res) {
 
 const saveNewInternshipProposal = function(req, res){
     let proposal = new InternshipProposal(req.body)
+    //console.log(proposal);
     proposal.companyId = userData.user._id;
     proposal.save(function (err, project) {
         if (err) {				
@@ -100,7 +101,7 @@ const processInternshipStatusReq = function(req, res){
         }
 
         if (req.query.college) {
-            objFilters.college = { $in: JSON.parse(req.query.college) }
+            objFilters["collegeName"] = { $in: JSON.parse(req.query.college) }
         }
 
         if (req.query.program) {
@@ -119,8 +120,9 @@ const processInternshipStatusReq = function(req, res){
             objFilters.yearTo = { $lte: Number(req.query.year) };
         }
 
+        console.log("objFilters: ", objFilters)
+
         InternshipProposal.aggregate([
-         
             {
                 
                 $lookup:
@@ -173,7 +175,8 @@ const processInternshipStatusReq = function(req, res){
                     hasAccepted: "$internship.hasAccepted",
                     //appliedOn: "$internship.appliedOn",
                     //resumeSubmitted: "$internship.resumeSubmitted",
-                    studentName: "$student.name"
+                    studentName: "$student.name",
+                    collegeName: "$student.college"
                 }
     
             },{
@@ -194,7 +197,7 @@ const processInternshipStatusReq = function(req, res){
 }
 
 const getInternshipStatusData = function (req, res) { 
-
+    console.log("getInternshipStatusData: ");
     processInternshipStatusReq(req, res)
         .then(docs => res.status(200)
             .json(docs))
@@ -260,13 +263,13 @@ const processInternshipAssessmentData = function(req, res){
 
         let objFilters = {}
     //objFilters.companyId = userData.user._id;
-    console.log("req.query: ", req.query);
-    console.log(req.query);
+    //console.log("req.query: ", req.query);
+    //console.log(req.query);
     if(req.query.profile){
         objFilters._id = {$eq: ObjectId(req.query.profile)}
     }
     if(req.query.college){
-        objFilters.college = {$eq: req.query.college}
+        objFilters.collegeName = {$eq: req.query.college}
     }
     InternshipProposal.aggregate([
         {
@@ -323,7 +326,8 @@ const processInternshipAssessmentData = function(req, res){
                 remark: "$internship.remark",
                 //appliedOn: "$internship.appliedOn",
                 //resumeSubmitted: "$internship.resumeSubmitted",
-                studentName: "$student.name"
+                studentName: "$student.name",
+                collegeName: "$student.college"
             }
 
         },{
@@ -511,6 +515,21 @@ const getCompanyFiltersData = function(req, res){
                         $group: {
                             _id: "$college" 
                         }
+                    },
+                    { $unwind: {path: '$_id'} },
+                    {
+                        $project:
+                        {
+                            _id: "$_id.value",
+                            value: "$_id.value",
+                        }
+            
+                    },
+                    {
+                        $group: {
+                            _id: "$_id",
+                            value: { $first: "$value" }, 
+                        }
                     }
                 ]).exec((err, result) => {
                     if(err){
@@ -518,7 +537,7 @@ const getCompanyFiltersData = function(req, res){
                     }
                     filtersData.colleges = result;
                     responseCounter++;
-                    //console.log(filtersData);
+                    console.log(filtersData);
                     if(responseCounter == filterOptions.length){
                         res.json(filtersData);
                     }
