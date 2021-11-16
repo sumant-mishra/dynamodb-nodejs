@@ -33,7 +33,7 @@
     "@babel/plugin-proposal-object-rest-spread": "^7.0.0",
     "@babel/preset-env": "^7.0.0",
     "apidoc": "^0.17.7",
-    "aws-sdk": "^2.560.0",
+    "aws-sdk": "^2.814.0",
     "babel-core": "7.0.0-bridge.0",
     "babel-eslint": "^8.2.1",
     "babel-jest": "^23.4.2",
